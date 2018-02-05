@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
+import okhttp3.CipherSuite;
 import okhttp3.ConnectionPool;
 import okhttp3.ConnectionSpec;
 import okhttp3.Headers;
@@ -376,7 +377,12 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
             clientBuilder.followSslRedirects(options.followRedirect);
             clientBuilder.retryOnConnectionFailure(true);
 
-            OkHttpClient client = enableTls12OnPreLollipop(clientBuilder).build();
+            OkHttpClient client;
+            if((Build.VERSION.CODENAME.equals("REL") && android.os.Build.VERSION.SDK_INT == 24) || Build.VERSION.CODENAME.compareTo("N") == 0) {
+                client = enableCipherOnNougat(clientBuilder).build();
+            } else {
+                client = enableTls12OnPreLollipop(clientBuilder).build();
+            }
 
             Call call =  client.newCall(req);
             taskTable.put(taskId, call);
@@ -696,10 +702,9 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
             try {
                 client.sslSocketFactory(new TLSSocketFactory());
-
                 ConnectionSpec cs = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
-                        .tlsVersions(TlsVersion.TLS_1_2)
-                        .build();
+                    .tlsVersions(TlsVersion.TLS_1_2)
+                    .build();
 
                 List< ConnectionSpec > specs = new ArrayList < > ();
                 specs.add(cs);
@@ -707,6 +712,7 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
                 specs.add(ConnectionSpec.CLEARTEXT);
 
                 client.connectionSpecs(specs);
+
             } catch (Exception exc) {
                 FLog.e("OkHttpClientProvider", "Error while enabling TLS 1.2", exc);
             }
@@ -715,5 +721,26 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
         return client;
     }
 
+    public static OkHttpClient.Builder enableCipherOnNougat(OkHttpClient.Builder client) {
+        try {
+            client.sslSocketFactory(new TLSSocketFactory());
+            ConnectionSpec cs = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
+                    .tlsVersions(TlsVersion.TLS_1_2)
+                    .cipherSuites(CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256)
+                    .build();
+
+            List< ConnectionSpec > specs = new ArrayList < > ();
+            specs.add(cs);
+            specs.add(ConnectionSpec.COMPATIBLE_TLS);
+            specs.add(ConnectionSpec.CLEARTEXT);
+
+            client.connectionSpecs(specs);
+
+        } catch (Exception exc) {
+            FLog.e("OkHttpClientProvider", "Error while enabling TLS 1.2", exc);
+        }
+
+        return client;
+    }
 
 }
