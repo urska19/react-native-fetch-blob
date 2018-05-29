@@ -710,10 +710,8 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
     public static OkHttpClient.Builder enableTls12OnPreLollipop(OkHttpClient.Builder client) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
             try {
-
                 KeyStore ksTrust = KeyStore.getInstance("BKS");
                 InputStream instream = RNFetchBlob.RCTContext.getResources().openRawResource(R.raw.global_root_g2);
-
                 ksTrust.load(instream, "".toCharArray());
 
                 TrustManagerFactory tmf = TrustManagerFactory
