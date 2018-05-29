@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -37,11 +38,19 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import okhttp3.Call;
 import okhttp3.CipherSuite;
@@ -701,7 +710,19 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
     public static OkHttpClient.Builder enableTls12OnPreLollipop(OkHttpClient.Builder client) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
             try {
-                client.sslSocketFactory(new TLSSocketFactory());
+
+                KeyStore ksTrust = KeyStore.getInstance("BKS");
+                InputStream instream = RNFetchBlob.RCTContext.getResources().openRawResource(R.raw.global_root_g2);
+
+                ksTrust.load(instream, "".toCharArray());
+
+                TrustManagerFactory tmf = TrustManagerFactory
+                        .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                tmf.init(ksTrust);
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, tmf.getTrustManagers(), null);
+                client.sslSocketFactory(sslContext.getSocketFactory());
+
                 ConnectionSpec cs = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
                     .tlsVersions(TlsVersion.TLS_1_2)
                     .build();
