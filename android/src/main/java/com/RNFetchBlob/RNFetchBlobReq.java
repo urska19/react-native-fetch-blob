@@ -742,10 +742,13 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
 
     public static OkHttpClient.Builder enableCipherOnNougat(OkHttpClient.Builder client) {
         try {
-            client.sslSocketFactory(new TLSSocketFactory());
+            TLSSocketFactory tlsSocketFactory = new TLSSocketFactory();
+            String[] suites = tlsSocketFactory.getDefaultCipherSuites();
+
+            client.sslSocketFactory(tlsSocketFactory);
             ConnectionSpec cs = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
                     .tlsVersions(TlsVersion.TLS_1_2)
-                    .cipherSuites(CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256)
+                    .cipherSuites(suites)
                     .build();
 
             List< ConnectionSpec > specs = new ArrayList < > ();
