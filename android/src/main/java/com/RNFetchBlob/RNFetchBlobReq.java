@@ -44,7 +44,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
 
@@ -61,7 +60,6 @@ import okhttp3.Headers;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -389,15 +387,11 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
             clientBuilder.retryOnConnectionFailure(true);
 
             OkHttpClient client;
-            OkHttpClient.Builder httpBuilder;
             if((Build.VERSION.CODENAME.equals("REL") && android.os.Build.VERSION.SDK_INT == 24) || Build.VERSION.CODENAME.compareTo("N") == 0) {
-                httpBuilder = enableCipherOnNougat(clientBuilder);
+                client = enableCipherOnNougat(clientBuilder).build();
             } else {
-                httpBuilder = enableTls12OnPreLollipop(clientBuilder);
+                client = enableTls12OnPreLollipop(clientBuilder).build();
             }
-
-            httpBuilder.protocols(Arrays.asList(Protocol.HTTP_1_1));
-            client = httpBuilder.build();
 
             Call call =  client.newCall(req);
             taskTable.put(taskId, call);
